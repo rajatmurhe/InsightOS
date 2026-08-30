@@ -1,0 +1,36 @@
+
+Act as a Senior Business Analyst. Review the following anomalous sales days flagged by our Machine Learning pipeline.
+
+CONTEXT:
+- The Isolation Forest model scanned 711 days of historical transaction data.
+- It flagged the following 21 days as statistically anomalous (top 3% variance).
+
+DATA REPORT:
+ day  daily_sales  anomaly_score
+   1       549.31             -1
+   2       458.91             -1
+   5       856.93             -1
+   6      1008.15             -1
+   8      1203.85             -1
+   9      1050.95             -1
+ 246     20901.13             -1
+ 276     23018.88             -1
+ 278        22.49             -1
+ 284     18680.19             -1
+ 319     18881.38             -1
+ 593     18949.29             -1
+ 610     20144.70             -1
+ 621     19612.10             -1
+ 640     19095.37             -1
+ 641     24760.10             -1
+ 643         2.99             -1
+ 669     19105.24             -1
+ 684     20335.99             -1
+ 691     22599.18             -1
+ 692     23511.82             -1
+
+TASK:
+Write a brief, professional email to the executive team summarizing these anomalies. Please categorize them into:
+1. 'Critical System Glitches' (Revenue under ₹100 - likely tracking failures)
+2. 'Extreme Spikes' (Revenue over ₹20,000 - likely massive bulk orders)
+3. 'Early Data Instability' (Days 1-10)
