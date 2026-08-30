@@ -1,0 +1,16 @@
+household_key,recency_days,frequency_baskets,total_spend,r_score,f_score,m_score,rfm_segment
+1023,1,603,38319.79,5,5,5,1 - Champions
+1609,0,411,27859.68,5,5,5,1 - Champions
+2322,0,323,23646.92,5,5,5,1 - Champions
+1453,1,761,21661.29,5,5,5,1 - Champions
+2459,7,970,20671.5,3,5,5,2 - Loyal Customers
+1430,0,344,20352.99,5,5,5,1 - Champions
+718,4,599,19299.86,4,5,5,1 - Champions
+707,0,497,19194.42,5,5,5,1 - Champions
+1653,1,538,19153.75,4,5,5,1 - Champions
+1111,4,321,18894.72,3,5,5,2 - Loyal Customers
+982,1,412,18790.34,4,5,5,1 - Champions
+400,0,310,18494.14,5,5,5,1 - Champions
+1229,0,385,18304.31,5,5,5,1 - Champions
+1975,1,363,17548.27,5,5,5,1 - Champions
+328,3,237,17332.13,4,5,5,1 - Champions
