@@ -1,62 +1,57 @@
-# InsightOS: Enterprise Data & AI Pipeline
+# InsightOS: Retail Analytics and Anomaly Detection Pipeline
 
-An end-to-end data analytics and artificial intelligence pipeline built to process raw retail transactions, monitor system health, and generate automated business intelligence.
-
-This project tackles the complex challenge of big data observability by connecting a **PostgreSQL Data Warehouse** directly with an **Isolation Forest Machine Learning Model**. By integrating advanced SQL analytics, unsupervised anomaly detection, and an automated GenAI reporting engine, this platform delivers a transparent, intelligent, and highly responsive retail monitoring system.
-
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white) ![Scikit-Learn](https://img.shields.io/badge/Scikit_Learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white) ![Tableau](https://img.shields.io/badge/Tableau-E97627?style=for-the-badge&logo=Tableau&logoColor=white) ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
-
-> *Time-series revenue tracking, statistical anomaly detection, and RFM (Recency, Frequency, Monetary) customer segmentation.*
+A batch pipeline that loads two years of grocery transactions into PostgreSQL, checks data quality, computes executive KPIs and RFM customer segments in SQL, flags unusual sales days with an Isolation Forest, and turns them into an executive alert. The results feed a Tableau dashboard.
 
 [![InsightOS Dashboard](data/dashboard/visual.png)](https://public.tableau.com/app/profile/rajat.murhe/viz/InsightOSExecutiveDashboard/Dashboard1)
 
-**🔗 [Click Here to View the Interactive Tableau Public Dashboard](https://public.tableau.com/app/profile/rajat.murhe/viz/InsightOSExecutiveDashboard/Dashboard1)**
+**[Open the interactive Tableau Public dashboard](https://public.tableau.com/app/profile/rajat.murhe/viz/InsightOSExecutiveDashboard/Dashboard1)**
 
----
+## Data
 
-## 🚀 Project Pipeline: What We Built
+[dunnhumby, *The Complete Journey*](https://www.dunnhumby.com/source-files/): household level transactions over 711 days from 2,500 households. The raw CSVs are not committed; download them and place `transaction_data.csv` and `product.csv` in `data/raw/`.
 
-This project was developed in five distinct phases, taking a raw dataset and transforming it into a full-stack data product.
+## Pipeline
 
-### 1. Data Engineering & Warehousing
-*   **Infrastructure Setup:** Architected a local relational database using **PostgreSQL**.
-*   **ETL Pipeline:** Developed a Python ingestion script using `SQLAlchemy` and `Pandas` to clean, format, and load raw CSV transaction data into optimized database tables.
+| Step | Code | What it does |
+| --- | --- | --- |
+| Load | `src/pipeline/load_raw.py`, `sql/schema.sql` | Creates the `products` and `transactions` tables (keys and indexes), then truncates and reloads them, so reruns give the same result |
+| Data quality | `src/pipeline/quality_checks.py` | Blocking checks: null keys, duplicate product ids, transactions with no product. Warnings: negative sales, quantity over 100, missing days. Writes `dq_report.csv` |
+| KPIs | `sql/kpis.sql` | Total sales, baskets, households, average basket value, built from CTEs. Unit KPIs leave out fuel and misc departments (see below) |
+| Segments | `sql/rfm.sql` | RFM scoring in SQL with `NTILE(5)` window functions and five segments (Champions, Loyal, New or Promising, At Risk, Hibernating) |
+| Anomalies | `src/anomaly/sales_anomaly.py` | Isolation Forest (3% contamination) on daily sales and the ratio to the trailing 7 day median, after a 100 day warm up |
+| Alert | `src/anomaly/llm_alert.py` | Builds an executive prompt from the anomalies; with `OPENAI_API_KEY` set it calls an OpenAI compatible API and saves the email to `reports/` |
 
-### 2. Advanced SQL Analytics
-*   **KPI Generation:** Designed complex SQL queries leveraging Common Table Expressions (CTEs) and aggregation functions to calculate top-level business metrics (Total Revenue, Average Order Value).
-*   **Customer Segmentation:** Engineered an **RFM (Recency, Frequency, Monetary)** scoring model entirely in SQL to categorize the user base into distinct cohorts (e.g., "Champions", "Loyal Customers") based on their purchasing behavior.
+Run everything with `python run_pipeline.py`.
 
-### 3. Machine Learning (Anomaly Detection)
-*   **Algorithm Deployment:** Implemented an unsupervised **Isolation Forest** machine learning model using `scikit-learn`. 
-*   **Behavioral Monitoring:** Rather than profiling normal behavior, the model actively isolates unusual revenue observations. Configured with a 3% contamination threshold, the AI successfully flagged severe system tracking failures (revenue dropping to near-zero) and extreme bulk-order spikes.
+## Findings and fixes
 
-### 4. Generative AI Prompt Engineering
-*   **Explainability Layer:** Built a dynamic Python module that intercepts the anomalous dataframes generated by the ML model.
-*   **Automated Context Injection:** The script engineers a highly structured prompt, injecting the exact mathematical outliers into a context window designed for Large Language Models (LLMs) to automatically generate categorization and executive email alerts.
+- **Unit KPIs.** An earlier export reported 944.89 units per basket. In this dataset the `QUANTITY` of fuel (KIOSK-GAS) and misc transactions is not an item count, so they inflated it. `kpis.sql` now excludes those departments from unit KPIs, and the quality checks report rows with quantity over 100 by department. Until the next full run, `kpis_executive.csv` holds only the value based KPIs.
+- **Anomalies.** The panel ramps up over the first ~100 days (median daily sales climb from about 1.8k to 10k), which a plain model flags as anomalies. With the warm up and the trailing median ratio, the 19 flagged days are now real breaks: two near zero days (278 and 643, likely tracking failures), spikes up to 1.8 times the trailing median, and the dips that follow some spikes. See `data/dashboard/anomalies.csv` and `reports/llm_executive_prompt.txt`.
 
-### 5. Business Intelligence & Visualization
-*   **Dashboard Architecture:** Connected the processed PostgreSQL exports to **Tableau**.
-*   **Visual Correlation:** Designed an executive dashboard featuring a time-series line chart that visually proves the machine learning model's findings, alongside the RFM customer distribution and core KPIs.
+## Run it
 
----
+```bash
+pip install -r requirements.txt
+export INSIGHTOS_DB_URI="postgresql+psycopg://<user>:<password>@localhost:5432/insightos"
+python run_pipeline.py
+pytest -q        # end to end test on a small synthetic sample (SQLite by default)
+```
 
-## 📁 Repository Structure
+Set `TEST_DB_URI` to run the same test on PostgreSQL. GitHub Actions runs it on both SQLite and PostgreSQL 16 for every push. Credentials only come from environment variables (see `.env.example`).
+
+## Repository layout
 
 ```text
-InsightOS/
-├── README.md
-├── requirements.txt
-├── export_trend.py
-├── llm_executive_prompt.txt
-├── data/
-│   ├── raw/
-│   └── dashboard/
-│       ├── customer_rfm.csv
-│       ├── daily_sales.csv
-│       ├── kpis_executive.csv
-│       └── visual.png
-└── src/
-    ├── pipeline/
-    └── anomaly/
-        ├── sales_anomaly.py
-        └── llm_alert.py
+run_pipeline.py            runs all steps in order
+sql/                       schema, KPI, RFM and daily sales SQL
+src/config.py              settings from environment variables
+src/pipeline/              load, data quality checks, dashboard exports
+src/anomaly/               Isolation Forest and the executive alert
+data/dashboard/            CSVs behind the Tableau dashboard
+reports/                   generated prompt (and alert, when an API key is set)
+tests/                     end to end pytest
+```
+
+## Tech stack
+
+Python (Pandas, SQLAlchemy, scikit learn), PostgreSQL, SQL (CTEs, window functions), Tableau, pytest, GitHub Actions.
