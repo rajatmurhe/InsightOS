@@ -1,0 +1,32 @@
+Act as a senior business analyst. Review the sales days flagged by our anomaly model.
+
+CONTEXT:
+- An Isolation Forest scanned 711 days of transactions (after a 100 day warm up while the panel ramps up).
+- It flagged 19 days. ratio_to_trailing compares each day with the median of the 7 days before it.
+
+DATA:
+ day  daily_sales  trailing_median  ratio_to_trailing  anomaly_score
+ 222     16388.45          9866.84               1.66          -0.61
+ 246     20901.13         14060.12               1.49          -0.66
+ 247      5905.22         15192.56               0.39          -0.75
+ 248      7785.53         15192.56               0.51          -0.69
+ 256     17448.37         10309.23               1.69          -0.65
+ 276     23018.88         12793.97               1.80          -0.76
+ 278        22.49         14520.57               0.00          -0.82
+ 284     18680.19         10859.10               1.72          -0.68
+ 610     20144.70         15610.20               1.29          -0.63
+ 611      6962.67         15889.59               0.44          -0.73
+ 612      8996.58         15889.59               0.57          -0.64
+ 621     19612.10         12147.22               1.62          -0.65
+ 641     24760.10         13900.69               1.78          -0.77
+ 643         2.99         13900.69               0.00          -0.82
+ 669     19105.24         12258.74               1.56          -0.63
+ 684     20335.99         13059.90               1.56          -0.66
+ 691     22599.18         13812.38               1.64          -0.72
+ 692     23511.82         13812.38               1.70          -0.76
+ 693      7573.73         13986.46               0.54          -0.69
+
+TASK:
+Write a short email to the executive team. Group the days into likely data or tracking problems
+(sales far below normal) and genuine demand spikes (sales far above normal), say which to investigate
+first, and keep it under 200 words.
